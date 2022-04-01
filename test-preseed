@@ -1,0 +1,194 @@
+#_preseed_V1
+ 
+# Localization
+###########################################
+ 
+d-i debian-installer/language string en
+d-i debian-installer/country string AT
+d-i debian-installer/locale string en_US.UTF-8
+ 
+d-i keyboard-configuration/xkb-keymap select de
+ 
+# Network configuration
+###########################################
+ 
+# Any hostname and domain names assigned from dhcp take precedence over
+# values set here. However, setting the values still prevents the questions
+# from being shown, even if values come from dhcp.
+ 
+# If you prefer to configure the network manually, uncomment this line
+# and add the static network configuration below.
+#d-i netcfg/disable_autoconfig boolean true
+ 
+d-i netcfg/get_hostname string myhostname
+d-i netcfg/get_domain string mydomain.net
+ 
+d-i netcfg/get_nameservers string 8.8.8.8
+ 
+# Mirror settings
+###########################################
+ 
+# Say that we do not want to set the mirror using the user interface.
+d-i mirror/country string manual
+# Now we manually set the mirror server.
+d-i mirror/http/hostname string debian.lagis.at
+d-i mirror/http/directory string /debian
+d-i mirror/http/proxy string
+ 
+# Account setup
+###########################################
+ 
+# Skip creation of a root account
+# (normal user account will be able to use sudo).
+d-i passwd/root-login boolean false
+ 
+# Create a normal user account.
+d-i passwd/user-fullname string MyUser
+d-i passwd/username string myuser
+# Password encrypted using a crypt(3) hash. Use
+# mkpasswd -m sha-512 to generate a SHA-512 based crypt(3) hash for a password.
+d-i passwd/user-password-crypted password <YOUR_PASSWORD>
+ 
+# Partitioning
+###########################################
+ 
+d-i partman-auto/method string regular
+ 
+d-i partman-auto/disk string /dev/sda
+ 
+# The following blog post explains the min / prio / max values and how they are interpreted
+# (https://www.bishnet.net/tim/blog/2015/01/29/understanding-partman-autoexpert_recipe/).
+# 
+# The configuration below will result in a fixed size boot and swap partition.
+# The root partition will be formatted using btrfs and will take up
+# all the remaining space.
+# 
+d-i partman-auto/expert_recipe string                         \
+      boot-root ::                                            \
+              1024 200 1024 btrfs                             \
+                      $primary{ } $bootable{ }                \
+                      method{ format } format{ }              \
+                      use_filesystem{ } filesystem{ btrfs }   \
+                      mountpoint{ /boot }                     \
+              .                                               \
+              4096 10000 -1 btrfs                             \
+                      $primary{ }                             \
+                      method{ format } format{ }              \
+                      use_filesystem{ } filesystem{ btrfs }   \
+                      mountpoint{ / }                         \
+              .                                               \
+              8192 100 8192 linux-swap                        \
+                      $primary{ }                             \
+                      method{ swap } format{ }                \
+              .
+ 
+# This makes partman automatically partition without confirmation, provided
+# that you told it what to do using one of the methods above.
+d-i partman-partitioning/confirm_write_new_label boolean true
+d-i partman/choose_partition select finish
+d-i partman/confirm boolean true
+d-i partman/confirm_nooverwrite boolean true
+ 
+# Package selection
+###########################################
+ 
+tasksel tasksel/first multiselect standard, ssh-server
+popularity-contest popularity-contest/participate boolean true
+ 
+# Boot loader installation
+##########################
+ 
+d-i grub-installer/only_debian boolean true
+ 
+# Due notably to potential USB sticks, the location of the MBR can not be
+# determined safely in general, so this needs to be specified:
+# To install to the first device (assuming it is not a USB stick):
+d-i grub-installer/bootdev  string default
+ 
+# Finishing up the installation
+###############################
+ 
+# Avoid that last message about the install being complete.
+d-i finish-install/reboot_in_progress note
+ 
+# Make user myuser ready-to be used by Ansible.
+d-i preseed/late_command string mkdir -p /target/home/myuser/.ssh \
+        && echo 'ssh-rsa <SSH_PUBLIC_KEY> myuser@mydomain.net' >> /target/home/myuser/.ssh/authorized_keys \
+        && chmod -R 700 /target/home/myuser/.ssh \
+        && chmod -R 600 /target/home/myuser/.ssh/authorized_keys \
+        && chown -R 1000:1000 /target/home/myuser/.ssh \
+        && echo 'myuser ALL=(ALL) NOPASSWD: ALL' > /target/etc/sudoers.d/myuser
+ 
+# Misc
+###############################
+ 
+# Do not prompt for scanning of additional CDs or
+# DVDs for use by the package manager (apt).
+apt-cdrom-setup	apt-setup/cdrom/set-first	boolean	false
+apt-cdrom-setup	apt-setup/cdrom/set-next	boolean	false
+apt-cdrom-setup	apt-setup/cdrom/set-failed	boolean	false
+apt-cdrom-setup	apt-setup/cdrom/set-double	boolean	false
+When you have the preseed.cfg file in place you have to add it to the netinst ISO. I have written a little script which accomplishes just that merge_preseed.sh:
+ 
+#!/bin/bash 
+ 
+# Hints:
+#
+# - https://www.debian.org/releases/stretch/i386/index.html.en
+#
+# - https://wiki.debian.org/DebianInstaller/Preseed/EditIso
+#
+# - Uncompress and extract an initial ramdisk (extracts it's
+#   contents into the current working directory):
+#
+#   $ zcat initrd.gz | cpio -dimv
+ 
+set -e 
+ 
+RAW_DEBIAN_ISO='./iso_source/debian-10.1.0-amd64-netinst.iso'
+ 
+WORKDIR='./workdir'
+LOOPDIR="/media/$USER/loopdir"
+ISODIR="$WORKDIR/isodir"
+ 
+PRESEED_FILE='./preseed.cfg'
+PRESEED_ISO='./iso_destination/debian-10.1.0-amd64-netinst-preseeded.iso'
+ 
+# Scrub workdir
+if [ -d "$WORKDIR" ]; then
+    chmod +w -R $WORKDIR
+    rm -rf $WORKDIR
+fi
+ 
+# Mount ISO
+echo "---> Trying to mount $RAW_DEBIAN_ISO at $LOOPDIR"
+udevil mount $RAW_DEBIAN_ISO $LOOPDIR &> /dev/null
+ 
+# Copy image
+mkdir -p $ISODIR
+cp -rT "$LOOPDIR" "$ISODIR"
+chmod +w -R $WORKDIR
+udevil umount "$LOOPDIR"
+ 
+# Hax the initrd of the console installer.
+# If you want to automate the graphical installer you have
+# to patch another initial ramdisk!
+gunzip $ISODIR/install.amd/initrd.gz
+echo $PRESEED_FILE | cpio -H newc -o -A -F $ISODIR/install.amd/initrd &> /dev/null
+gzip $ISODIR/install.amd/initrd
+ 
+# Fix md5sum
+ 
+PREVIOUS_WORKING_DIR=$(pwd)
+cd $ISODIR
+find . -type f -exec md5sum "{}" \; > md5sum.txt
+cd $PREVIOUS_WORKING_DIR
+ 
+# Create ISO
+# IMPORTANT: the arguments passed to the -b and -c flags should be RELATIVE paths to the last argument
+genisoimage -r -J -b isolinux/isolinux.bin -c isolinux/boot.cat \
+            -no-emul-boot -boot-load-size 4 -boot-info-table \
+            -input-charset utf-8 \
+            -o "$PRESEED_ISO" "$ISODIR" &> /dev/null
+ 
+echo "---> Preseed config $PRESEED_FILE has been successfully merged into image $PRESEED_ISO"
