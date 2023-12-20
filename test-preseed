@@ -9,15 +9,6 @@ d-i keyboard-configuration/xkb-keymap select de
  
 # Network configuration
 ###########################################
- 
-# Any hostname and domain names assigned from dhcp take precedence over
-# values set here. However, setting the values still prevents the questions
-# from being shown, even if values come from dhcp.
- 
-# If you prefer to configure the network manually, uncomment this line
-# and add the static network configuration below.
-#d-i netcfg/disable_autoconfig boolean true
- 
 d-i netcfg/get_hostname string myhostname
 d-i netcfg/get_domain string mydomain.net
  
@@ -126,5 +117,4 @@ apt-cdrom-setup	apt-setup/cdrom/set-first	boolean	false
 apt-cdrom-setup	apt-setup/cdrom/set-next	boolean	false
 apt-cdrom-setup	apt-setup/cdrom/set-failed	boolean	false
 apt-cdrom-setup	apt-setup/cdrom/set-double	boolean	false
-When you have the preseed.cfg file in place you have to add it to the netinst ISO. I have written a little script which accomplishes just that merge_preseed.sh:
  
