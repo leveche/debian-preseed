@@ -101,7 +101,8 @@ d-i    popularity-contest/participate                  boolean        false
 
 
 # timezone
-d-i    time/zone                                       string         Australia/Brisbane
+d-i    time/zone                                       string         UTC
+d-i    clock-setup/utc                                 boolean        true
 
 
 # Finishing up the installation
