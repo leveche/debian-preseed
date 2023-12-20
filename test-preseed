@@ -1,5 +1,3 @@
-#_preseed_V1
- 
 # Localization
 ###########################################
  
@@ -130,65 +128,3 @@ apt-cdrom-setup	apt-setup/cdrom/set-failed	boolean	false
 apt-cdrom-setup	apt-setup/cdrom/set-double	boolean	false
 When you have the preseed.cfg file in place you have to add it to the netinst ISO. I have written a little script which accomplishes just that merge_preseed.sh:
  
-#!/bin/bash 
- 
-# Hints:
-#
-# - https://www.debian.org/releases/stretch/i386/index.html.en
-#
-# - https://wiki.debian.org/DebianInstaller/Preseed/EditIso
-#
-# - Uncompress and extract an initial ramdisk (extracts it's
-#   contents into the current working directory):
-#
-#   $ zcat initrd.gz | cpio -dimv
- 
-set -e 
- 
-RAW_DEBIAN_ISO='./iso_source/debian-10.1.0-amd64-netinst.iso'
- 
-WORKDIR='./workdir'
-LOOPDIR="/media/$USER/loopdir"
-ISODIR="$WORKDIR/isodir"
- 
-PRESEED_FILE='./preseed.cfg'
-PRESEED_ISO='./iso_destination/debian-10.1.0-amd64-netinst-preseeded.iso'
- 
-# Scrub workdir
-if [ -d "$WORKDIR" ]; then
-    chmod +w -R $WORKDIR
-    rm -rf $WORKDIR
-fi
- 
-# Mount ISO
-echo "---> Trying to mount $RAW_DEBIAN_ISO at $LOOPDIR"
-udevil mount $RAW_DEBIAN_ISO $LOOPDIR &> /dev/null
- 
-# Copy image
-mkdir -p $ISODIR
-cp -rT "$LOOPDIR" "$ISODIR"
-chmod +w -R $WORKDIR
-udevil umount "$LOOPDIR"
- 
-# Hax the initrd of the console installer.
-# If you want to automate the graphical installer you have
-# to patch another initial ramdisk!
-gunzip $ISODIR/install.amd/initrd.gz
-echo $PRESEED_FILE | cpio -H newc -o -A -F $ISODIR/install.amd/initrd &> /dev/null
-gzip $ISODIR/install.amd/initrd
- 
-# Fix md5sum
- 
-PREVIOUS_WORKING_DIR=$(pwd)
-cd $ISODIR
-find . -type f -exec md5sum "{}" \; > md5sum.txt
-cd $PREVIOUS_WORKING_DIR
- 
-# Create ISO
-# IMPORTANT: the arguments passed to the -b and -c flags should be RELATIVE paths to the last argument
-genisoimage -r -J -b isolinux/isolinux.bin -c isolinux/boot.cat \
-            -no-emul-boot -boot-load-size 4 -boot-info-table \
-            -input-charset utf-8 \
-            -o "$PRESEED_ISO" "$ISODIR" &> /dev/null
- 
-echo "---> Preseed config $PRESEED_FILE has been successfully merged into image $PRESEED_ISO"
