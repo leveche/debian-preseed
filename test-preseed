@@ -73,10 +73,10 @@ d-i    grub-installer/only_debian                      boolean        true
 
 # Account setup
 ###########################################
-# Password: set randomize at install.
+# Password: randomize at install doesn't work because the d-i is idiotic and asks for passwd/root-password-again
 # mkpasswd -m sha-512 to generate a SHA-512 based crypt(3) hash for a password.
 
-d-i    passwd/root-password                            password       `head -c 16 /dev/urandom | base64`
+# d-i    passwd/root-password                            password       `head -c 16 /dev/urandom | base64`
 d-i    passwd/root-login                               boolean        true
 d-i    passwd/make-user                                boolean        false
 
