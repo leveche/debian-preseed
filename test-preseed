@@ -44,7 +44,7 @@ d-i    mirror/https/mirror                             select         deb.debian
 ###########################################
 
 # disk
-d-i    partman-auto/disk                               string         /dev/vda
+d-i    partman-auto/disk                               string         /dev/sda
 d-i    partman-auto/method                             string         regular
 d-i    partman-auto/expert_recipe string                         \
       boot-root ::                                            \
