@@ -136,4 +136,5 @@ in-target chmod 700 /root/.ssh/; \
 in-target chattr +c /var/log; \
 in-target rmdir /srv; \
 in-target btrfs sub create /srv; \
-in-target btrfs chattr +c /srv
+in-target btrfs property set /srv compression zlib
+
