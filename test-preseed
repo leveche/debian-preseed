@@ -132,4 +132,8 @@ d-i     preseed/late_command                    string in-target  mkdir -p /root
 in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIELI1/xG/Er3lrbVvUS5AaMCdrS48u8kzDejO9hhbbTn d-i' >> /root/.ssh/authorized_keys"; \
 in-target chown -R root:root /root/.ssh/; \
 in-target chmod 644 /root/.ssh/authorized_keys; \
-in-target chmod 700 /root/.ssh/
+in-target chmod 700 /root/.ssh/ \
+in-target chattr +c /var/log \
+in-target rmdir -f /srv \
+in-target btrfs sub create /srv \
+in-target btrfs chattr +c /srv
