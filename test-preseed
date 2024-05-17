@@ -1,7 +1,7 @@
 #_preseed_V1
 
 # seed random 16 bytes as root password
-d-i   preseed/early-command                           string          head -c 16 /dev/urandom | base64 > /tmp/.root_passwd
+d-i   preseed/early_command                           string          head -c 16 /dev/urandom | base64 > /tmp/.root_passwd
 
 # Localization
 ###########################################
@@ -47,11 +47,12 @@ d-i    mirror/https/mirror                             select         deb.debian
 ###########################################
 
 # disk
-d-i    partman-auto/disk                               string         /dev/sda
+d-i    partman/early_command                             string  \
+    debconf-set partman-auto/disk "$(list-devices disk | head -n1)"
 d-i    partman-auto/method                             string         regular
-d-i    partman-auto/expert_recipe string                         \
+d-i    partman-auto/expert_recipe string                      \
       boot-root ::                                            \
-              512 200 1024 btrfs                              \
+              512 200 1024 ext4                               \
                       $primary{ } $bootable{ }                \
                       method{ format } format{ }              \
                       use_filesystem{ } filesystem{ btrfs }   \
@@ -73,14 +74,14 @@ d-i    partman/confirm                                 boolean        true
 d-i    partman/confirm_nooverwrite                     boolean        true
 
 # grub
-d-i    grub-installer/choose_bootdev                   select         /dev/vda
+d-i    grub_installer/early_command                    string   \
+    debconf-set  grub-installer/choose_bootdev "$(list-devices disk | head -n1)"
 d-i    grub-installer/only_debian                      boolean        true
 
 
 # Account setup
 ###########################################
 # Now use root password we seeded in the preseed/early_command:
-# mkpasswd -m sha-512 to generate a SHA-512 based crypt(3) hash for a password.
 
 d-i    passwd/root-password                            password       $(</tmp/.root_passwd)
 d-i    passwd/root-password-again                      password       $(</tmp/.root_passwd)
