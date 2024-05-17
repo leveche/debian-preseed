@@ -134,6 +134,6 @@ in-target chown -R root:root /root/.ssh/; \
 in-target chmod 644 /root/.ssh/authorized_keys; \
 in-target chmod 700 /root/.ssh/; \
 in-target chattr +c /var/log; \
-in-target rmdir -f /srv; \
+in-target rmdir /srv; \
 in-target btrfs sub create /srv; \
 in-target btrfs chattr +c /srv
