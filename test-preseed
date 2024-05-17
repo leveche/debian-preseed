@@ -73,7 +73,7 @@ d-i    partman/confirm_nooverwrite                     boolean        true
 
 # grub
 d-i    grub_installer/early_command                    string   \
-    debconf-set  grub-installer/choose_bootdev "$(list-devices disk | head -n1)"
+    debconf-set  grub-installer/bootdev "$(list-devices disk | head -n1)"
 d-i    grub-installer/only_debian                      boolean        true
 
 
@@ -129,7 +129,7 @@ apt-cdrom-setup	apt-setup/cdrom/set-double	boolean	false
 # ssh pubkey for root; to be swapped out by ansible on first run
 ###############################
 d-i     preseed/late_command                    string in-target  mkdir -p /root/.ssh; \
-in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIELI1/xG/Er3lrbVvUS5AaMCdrS48u8kzDejO9hhbbTn d-i' >> /root/.ssh/authorized_keys"; \
+in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK4HgaQo+wakKpCamQuzIPSuyjvZJ46/7Cz6wO3oYIgF d-i' >> /root/.ssh/authorized_keys"; \
 in-target chown -R root:root /root/.ssh/; \
 in-target chmod 644 /root/.ssh/authorized_keys; \
 in-target chmod 700 /root/.ssh/; \
