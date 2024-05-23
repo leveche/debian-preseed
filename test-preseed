@@ -102,7 +102,7 @@ d-i    hw-detect/load_firmware                         boolean        true
 d-i    pkgsel/update-policy                            select         none
 d-i    pkgsel/updatedb                                 boolean        true
 d-i    pkgsel/run_tasksel                              boolean        false
-d-i    pkgsel/include                                  string         sudo debconf-utils lsb-release openssh-server
+d-i    pkgsel/include                                  string         sudo debconf-utils lsb-release openssh-server python3
 d-i    popularity-contest/participate                  boolean        false
 
 
