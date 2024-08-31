@@ -133,8 +133,9 @@ in-target /bin/sh -c "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK4HgaQo+wakKpCa
 in-target chown -R root:root /root/.ssh/; \
 in-target chmod 644 /root/.ssh/authorized_keys; \
 in-target chmod 700 /root/.ssh/; \
-in-target chattr +c /var/log; \
-in-target rmdir /srv; \
+in-target chattr +c /var/log /var/cache; \
+in-target rmdir /srv /home; \
 in-target btrfs sub create /srv; \
-in-target btrfs property set /srv compression zlib
-
+in-target btrfs sub create /home; \
+in-target btrfs property set /home compression zstd; \
+in-target btrfs property set /srv  compression zlib
